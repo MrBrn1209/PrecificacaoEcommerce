@@ -36,9 +36,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/produtos", async (req: Request, res: Response) => {
     try {
-      const parsedBody = insertProdutoSchema.safeParse(req.body);
+      console.log("Recebido produto:", req.body);
+      
+      // Converte os valores de string para números, se necessário
+      const dadosFormatados = {
+        ...req.body,
+        custoCompra: typeof req.body.custoCompra === 'string' 
+          ? parseFloat(req.body.custoCompra) 
+          : req.body.custoCompra,
+        precoVenda: typeof req.body.precoVenda === 'string' 
+          ? parseFloat(req.body.precoVenda) 
+          : req.body.precoVenda
+      };
+      
+      const parsedBody = insertProdutoSchema.safeParse(dadosFormatados);
       
       if (!parsedBody.success) {
+        console.log("Erro de validação:", parsedBody.error);
         return res.status(400).json({ 
           error: "Dados de produto inválidos", 
           details: parsedBody.error 
@@ -48,6 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const produto = await storage.createProduto(parsedBody.data);
       res.status(201).json(produto);
     } catch (error) {
+      console.log("Erro ao criar produto:", error);
       res.status(500).json({ error: "Erro ao criar produto" });
     }
   });
