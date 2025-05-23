@@ -29,6 +29,32 @@ const Home = () => {
   const [produto, setProduto] = useState<DadosProduto | null>(null);
   const [calculos, setCalculos] = useState<ResultadoCalculos | null>(null);
   const [mostrarResultado, setMostrarResultado] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Mutation para salvar produto no inventário
+  const saveMutation = useMutation({
+    mutationFn: async (produtoData: DadosProduto) => {
+      return await apiRequest("/api/produtos", {
+        method: "POST",
+        body: JSON.stringify(produtoData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ["/api/produtos"]});
+      toast({
+        title: "Produto salvo!",
+        description: "O produto foi adicionado ao seu inventário com sucesso."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar o produto no inventário. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleCalcular = (dadosProduto: DadosProduto) => {
     setProduto(dadosProduto);
@@ -61,6 +87,12 @@ const Home = () => {
     setMostrarResultado(true);
   };
 
+  const handleSalvar = () => {
+    if (produto) {
+      saveMutation.mutate(produto);
+    }
+  };
+
   const handleLimpar = () => {
     setProduto(null);
     setCalculos(null);
@@ -81,16 +113,40 @@ const Home = () => {
         />
         
         {mostrarResultado && produto && calculos && (
-          <ResultadoCalculo 
-            produto={produto} 
-            calculos={calculos} 
-          />
+          <div>
+            <ResultadoCalculo 
+              produto={produto} 
+              calculos={calculos} 
+            />
+            
+            <div className="px-6 py-4 flex flex-col sm:flex-row gap-4 justify-center border-t border-gray-200">
+              <Button 
+                onClick={handleSalvar}
+                className="bg-primary hover:bg-[#FF6D40] flex-1"
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? "Salvando..." : "Salvar no Inventário"}
+              </Button>
+              
+              <Link href="/inventario">
+                <Button 
+                  variant="outline" 
+                  className="border-primary text-primary hover:bg-[#FFF0ED] flex-1 w-full sm:w-auto"
+                >
+                  Ver Inventário
+                </Button>
+              </Link>
+            </div>
+          </div>
         )}
       </main>
       
       <footer className="w-full max-w-3xl mt-6 mb-10 text-center text-sm text-[#ACACAC]">
         <p>Esta calculadora foi desenvolvida para auxiliar vendedores da Shopee Brasil.</p>
         <p>Os valores são aproximados e podem variar de acordo com políticas específicas da plataforma.</p>
+        <Link href="/inventario" className="text-primary hover:underline inline-block mt-2">
+          Acessar o Inventário de Produtos
+        </Link>
       </footer>
     </div>
   );
