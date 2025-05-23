@@ -1,6 +1,11 @@
 import CalculadoraForm from "@/components/calculadora-form";
 import ResultadoCalculo from "@/components/resultado-calculo";
 import { useState } from "react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export type DadosProduto = {
   nome: string;
