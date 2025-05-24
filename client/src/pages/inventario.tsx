@@ -4,8 +4,17 @@ import { formatarMoeda } from "@/lib/formatacao";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Trash, Info } from "lucide-react";
 import type { DadosProduto } from "./home";
+import type { ResultadoCalculos } from "./home";
 import { Link } from "wouter";
 import { inventarioService, ProdutoSalvo } from "@/lib/localStorageService";
 
@@ -16,6 +25,11 @@ const Inventario = () => {
   // Estado para armazenar produtos do localStorage
   const [produtos, setProdutos] = useState<ProdutoSalvo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Estado para controlar o diálogo de detalhes
+  const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoSalvo | null>(null);
+  const [calculoSelecionado, setCalculoSelecionado] = useState<ResultadoCalculos | null>(null);
+  const [dialogoAberto, setDialogoAberto] = useState(false);
   
   // Carrega produtos do localStorage quando o componente monta
   useEffect(() => {
@@ -88,9 +102,22 @@ const Inventario = () => {
     const margemLucro = (lucroLiquido / precoVenda) * 100;
     
     return {
+      impostos,
+      taxasShopee,
+      custoMaterial,
+      custoAds,
+      totalCustos,
       lucroLiquido,
       margemLucro
     };
+  };
+  
+  // Função para abrir o diálogo com os detalhes do produto
+  const abrirDetalhes = (produto: ProdutoSalvo) => {
+    setProdutoSelecionado(produto);
+    const calculos = calcularResultados(produto);
+    setCalculoSelecionado(calculos);
+    setDialogoAberto(true);
   };
   
   return (
@@ -164,6 +191,18 @@ const Inventario = () => {
                           </span>
                         </div>
                       </div>
+                      
+                      <div className="mt-3 flex justify-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-800 w-full"
+                          onClick={() => abrirDetalhes(produto)}
+                        >
+                          <Info size={16} className="mr-1" />
+                          Ver detalhes completos
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -180,6 +219,107 @@ const Inventario = () => {
           </div>
         )}
       </main>
+      
+      {/* Diálogo para exibir detalhes completos do cálculo */}
+      <Dialog open={dialogoAberto} onOpenChange={setDialogoAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {produtoSelecionado?.nome}
+            </DialogTitle>
+            <DialogDescription>
+              Detalhes completos dos cálculos e custos
+            </DialogDescription>
+          </DialogHeader>
+          
+          {produtoSelecionado && calculoSelecionado && (
+            <div className="space-y-4 py-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Informações do Produto</h3>
+                  <ul className="mt-2 space-y-2">
+                    <li className="flex justify-between">
+                      <span className="text-sm">Marca:</span>
+                      <span className="text-sm font-medium">{produtoSelecionado.marca}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-sm">Referência:</span>
+                      <span className="text-sm font-medium">{produtoSelecionado.referencia}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-sm">Custo de Compra:</span>
+                      <span className="text-sm font-medium">
+                        {formatarMoeda(Number(produtoSelecionado.custoCompra))}
+                      </span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-sm">Preço de Venda:</span>
+                      <span className="text-sm font-medium">
+                        {formatarMoeda(Number(produtoSelecionado.precoVenda))}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Detalhes dos Custos</h3>
+                  <ul className="mt-2 space-y-2">
+                    <li className="flex justify-between">
+                      <span className="text-sm">Impostos (10%):</span>
+                      <span className="text-sm font-medium">
+                        {formatarMoeda(calculoSelecionado.impostos)}
+                      </span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-sm">Taxas Shopee:</span>
+                      <span className="text-sm font-medium">
+                        {formatarMoeda(calculoSelecionado.taxasShopee)}
+                      </span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-sm">Custo Material:</span>
+                      <span className="text-sm font-medium">
+                        {formatarMoeda(calculoSelecionado.custoMaterial)}
+                      </span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-sm">Custo Anúncios:</span>
+                      <span className="text-sm font-medium">
+                        {formatarMoeda(calculoSelecionado.custoAds)}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="pt-4 mt-2 border-t border-gray-200">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Total de Custos:</span>
+                  <span className="font-medium">
+                    {formatarMoeda(calculoSelecionado.totalCustos)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="font-medium">Lucro Líquido:</span>
+                  <span className={`font-bold ${calculoSelecionado.lucroLiquido < 0 ? 'text-red-500' : 'text-[#28A745]'}`}>
+                    {formatarMoeda(calculoSelecionado.lucroLiquido)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="font-medium">Margem de Lucro:</span>
+                  <span className={`font-bold ${calculoSelecionado.margemLucro < 0 ? 'text-red-500' : 'text-[#28A745]'}`}>
+                    {calculoSelecionado.margemLucro.toFixed(2).replace('.', ',')}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setDialogoAberto(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
