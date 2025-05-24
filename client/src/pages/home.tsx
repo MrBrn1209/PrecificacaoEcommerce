@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { inventarioService } from "@/lib/localStorageService";
 
 export type DadosProduto = {
   nome: string;
@@ -36,9 +37,7 @@ const Home = () => {
   const saveMutation = useMutation({
     mutationFn: (produtoData: DadosProduto) => {
       try {
-        // Importação sob demanda para evitar problemas de SSR
-        const { inventarioService } = require("@/lib/localStorageService");
-        // Salva diretamente no localStorage
+        // Usa o serviço de armazenamento local importado diretamente
         return inventarioService.salvarProduto(produtoData);
       } catch (error) {
         console.error("Erro ao salvar no armazenamento local:", error);
