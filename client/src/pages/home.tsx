@@ -35,14 +35,14 @@ const Home = () => {
   // Mutation para salvar produto no inventário
   const saveMutation = useMutation({
     mutationFn: async (produtoData: DadosProduto) => {
-      // Converta os valores numéricos para strings com 2 casas decimais
+      // Converta os números para strings
       const produtoFormatado = {
-        ...produtoData,
-        custoCompra: produtoData.custoCompra.toFixed(2),
-        precoVenda: produtoData.precoVenda.toFixed(2)
+        nome: produtoData.nome,
+        marca: produtoData.marca,
+        referencia: produtoData.referencia,
+        custoCompra: String(produtoData.custoCompra),
+        precoVenda: String(produtoData.precoVenda)
       };
-      
-      console.log("Enviando produto:", produtoFormatado);
       
       return await apiRequest("/api/produtos", {
         method: "POST",

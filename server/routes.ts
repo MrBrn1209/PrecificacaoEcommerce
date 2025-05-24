@@ -38,28 +38,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Recebido produto:", req.body);
       
-      // Converte os valores de string para números, se necessário
+      // Certifique-se de que os valores sejam strings
       const dadosFormatados = {
-        ...req.body,
-        custoCompra: typeof req.body.custoCompra === 'string' 
-          ? parseFloat(req.body.custoCompra) 
-          : req.body.custoCompra,
-        precoVenda: typeof req.body.precoVenda === 'string' 
-          ? parseFloat(req.body.precoVenda) 
-          : req.body.precoVenda
+        nome: req.body.nome,
+        marca: req.body.marca,
+        referencia: req.body.referencia,
+        custoCompra: String(req.body.custoCompra),
+        precoVenda: String(req.body.precoVenda)
       };
       
-      const parsedBody = insertProdutoSchema.safeParse(dadosFormatados);
-      
-      if (!parsedBody.success) {
-        console.log("Erro de validação:", parsedBody.error);
-        return res.status(400).json({ 
-          error: "Dados de produto inválidos", 
-          details: parsedBody.error 
-        });
-      }
-      
-      const produto = await storage.createProduto(parsedBody.data);
+      const produto = await storage.createProduto(dadosFormatados);
       res.status(201).json(produto);
     } catch (error) {
       console.log("Erro ao criar produto:", error);

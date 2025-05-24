@@ -13,8 +13,8 @@ export const produtos = pgTable("produtos", {
   nome: text("nome").notNull(),
   marca: text("marca").notNull(),
   referencia: text("referencia").notNull(),
-  custoCompra: numeric("custo_compra", { precision: 10, scale: 2 }).notNull(),
-  precoVenda: numeric("preco_venda", { precision: 10, scale: 2 }).notNull(),
+  custoCompra: text("custo_compra").notNull(),
+  precoVenda: text("preco_venda").notNull(),
   dataCadastro: timestamp("data_cadastro").defaultNow().notNull(),
 });
 
@@ -23,12 +23,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertProdutoSchema = createInsertSchema(produtos).pick({
-  nome: true,
-  marca: true,
-  referencia: true,
-  custoCompra: true,
-  precoVenda: true,
+export const insertProdutoSchema = z.object({
+  nome: z.string(),
+  marca: z.string(),
+  referencia: z.string(),
+  custoCompra: z.string(),
+  precoVenda: z.string(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

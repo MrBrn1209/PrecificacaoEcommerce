@@ -28,8 +28,8 @@ const CalculadoraForm = ({ onCalcular, onLimpar }: CalculadoraFormProps) => {
       nome: "",
       marca: "",
       referencia: "",
-      custoCompra: undefined,
-      precoVenda: undefined
+      custoCompra: 0,
+      precoVenda: 0
     }
   });
 
