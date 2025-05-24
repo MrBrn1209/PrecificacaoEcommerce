@@ -1,36 +1,54 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { useState, useEffect } from "react";
 import { formatarMoeda } from "@/lib/formatacao";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash } from "lucide-react";
-import type { ProdutoAPI } from "@/lib/apiTypes";
 import type { DadosProduto } from "./home";
 import { Link } from "wouter";
+import { inventarioService, ProdutoSalvo } from "@/lib/localStorageService";
 
 const Inventario = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Buscar produtos do inventário
-  const { data: produtos, isLoading } = useQuery({
-    queryKey: ["/api/produtos"],
-    queryFn: async () => {
-      return await apiRequest("/api/produtos");
-    }
-  });
+  // Estado para armazenar produtos do localStorage
+  const [produtos, setProdutos] = useState<ProdutoSalvo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Mutation para excluir produto
+  // Carrega produtos do localStorage quando o componente monta
+  useEffect(() => {
+    const carregarProdutos = () => {
+      try {
+        const produtosSalvos = inventarioService.obterProdutos();
+        setProdutos(produtosSalvos);
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+        toast({
+          title: "Erro ao carregar",
+          description: "Não foi possível carregar seus produtos.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    carregarProdutos();
+  }, [toast]);
+  
+  // Mutation para excluir produto do localStorage
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/produtos/${id}`, {
-        method: "DELETE"
-      });
+      const sucesso = inventarioService.excluirProduto(id);
+      if (!sucesso) throw new Error("Produto não encontrado");
+      return id;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({queryKey: ["/api/produtos"]});
+    onSuccess: (id) => {
+      // Atualiza o estado local em vez de fazer nova requisição
+      setProdutos(produtos.filter(p => p.id !== id));
+      
       toast({
         title: "Produto excluído",
         description: "O produto foi removido do inventário com sucesso."
@@ -51,15 +69,15 @@ const Inventario = () => {
     }
   };
   
-  // Converter string para número
-  const toNumber = (value: string): number => {
-    return parseFloat(value);
-  };
-  
   // Calcular lucro e margem
-  const calcularResultados = (produto: ProdutoAPI) => {
-    const custoCompra = toNumber(produto.custoCompra);
-    const precoVenda = toNumber(produto.precoVenda);
+  const calcularResultados = (produto: ProdutoSalvo) => {
+    const custoCompra = typeof produto.custoCompra === 'string' 
+      ? parseFloat(produto.custoCompra) 
+      : produto.custoCompra;
+      
+    const precoVenda = typeof produto.precoVenda === 'string' 
+      ? parseFloat(produto.precoVenda) 
+      : produto.precoVenda;
     
     const impostos = precoVenda * 0.10;
     const taxasShopee = (precoVenda * 0.20) + 4;
@@ -97,7 +115,7 @@ const Inventario = () => {
           </div>
         ) : produtos && produtos.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {produtos.map((produto: ProdutoAPI) => {
+            {produtos.map((produto) => {
               const { lucroLiquido, margemLucro } = calcularResultados(produto);
               
               return (
@@ -125,11 +143,11 @@ const Inventario = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#ACACAC]">Custo:</span>
-                        <span>{formatarMoeda(toNumber(produto.custoCompra))}</span>
+                        <span>{formatarMoeda(Number(produto.custoCompra))}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#ACACAC]">Preço:</span>
-                        <span>{formatarMoeda(toNumber(produto.precoVenda))}</span>
+                        <span>{formatarMoeda(Number(produto.precoVenda))}</span>
                       </div>
                       
                       <div className="pt-2 mt-2 border-t border-gray-100">

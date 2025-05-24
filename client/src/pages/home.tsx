@@ -32,31 +32,16 @@ const Home = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Mutation para salvar produto no inventário
+  // Hook para salvar produto no localStorage (armazenamento local do navegador)
   const saveMutation = useMutation({
-    mutationFn: async (produtoData: DadosProduto) => {
+    mutationFn: (produtoData: DadosProduto) => {
       try {
-        // Formatação manual direta para contornar problemas de validação
-        const produtoFormatado = {
-          nome: String(produtoData.nome),
-          marca: String(produtoData.marca),
-          referencia: String(produtoData.referencia),
-          custoCompra: produtoData.custoCompra.toString(),
-          precoVenda: produtoData.precoVenda.toString()
-        };
-        
-        console.log("Tentando salvar produto:", produtoFormatado);
-        
-        return await fetch("/api/produtos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(produtoFormatado)
-        }).then(res => {
-          if (!res.ok) throw new Error("Falha ao salvar");
-          return res.json();
-        });
+        // Importação sob demanda para evitar problemas de SSR
+        const { inventarioService } = require("@/lib/localStorageService");
+        // Salva diretamente no localStorage
+        return inventarioService.salvarProduto(produtoData);
       } catch (error) {
-        console.error("Erro ao salvar:", error);
+        console.error("Erro ao salvar no armazenamento local:", error);
         throw error;
       }
     },
