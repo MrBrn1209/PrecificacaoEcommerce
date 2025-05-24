@@ -35,19 +35,30 @@ const Home = () => {
   // Mutation para salvar produto no inventário
   const saveMutation = useMutation({
     mutationFn: async (produtoData: DadosProduto) => {
-      // Converta os números para strings
-      const produtoFormatado = {
-        nome: produtoData.nome,
-        marca: produtoData.marca,
-        referencia: produtoData.referencia,
-        custoCompra: String(produtoData.custoCompra),
-        precoVenda: String(produtoData.precoVenda)
-      };
-      
-      return await apiRequest("/api/produtos", {
-        method: "POST",
-        body: JSON.stringify(produtoFormatado)
-      });
+      try {
+        // Formatação manual direta para contornar problemas de validação
+        const produtoFormatado = {
+          nome: String(produtoData.nome),
+          marca: String(produtoData.marca),
+          referencia: String(produtoData.referencia),
+          custoCompra: produtoData.custoCompra.toString(),
+          precoVenda: produtoData.precoVenda.toString()
+        };
+        
+        console.log("Tentando salvar produto:", produtoFormatado);
+        
+        return await fetch("/api/produtos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(produtoFormatado)
+        }).then(res => {
+          if (!res.ok) throw new Error("Falha ao salvar");
+          return res.json();
+        });
+      } catch (error) {
+        console.error("Erro ao salvar:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ["/api/produtos"]});
