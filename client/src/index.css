@@ -33,6 +33,11 @@
   --success: 134 59% 41%; /* #28A745 */
 }
 
+client/
+├── App.tsx
+├── main.tsx 
+├── index.html
+
 .dark {
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
